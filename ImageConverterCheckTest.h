@@ -1,13 +1,18 @@
-#ifndef _win_client_
-#define _win_client_
+#ifndef _ImageConverterCheckTest_
+#define _ImageConverterCheckTest_
 /***********************************************************************
  * インクルードファイル
  ***********************************************************************/
 
 #include<iostream>
+#include<string>
 #include<winsock2.h	>	//TCP/IP 用の WinSock 2 Protocol-Specific Annex ドキュメントで導入された定義が含まれており、IP アドレスの取得に使用される新しい関数と構造が含まれている
 
-
+#define FRAMESIZE 250000
+#define PACKETSIZE 1300
+ /*サーバー情報マクロ*/
+#define PORT_NUM_SERVER 1237
+#define IP_ADDR_SERVER "169.254.116.138"
 
 class winSocketCl{
 private:
@@ -27,8 +32,8 @@ public:
 	void SetServer();			/*サーバー情報の設定*/	
 	int MakeSocket();		/*ソケット作成*/
 	int ConnToServer();	/*コネクト*/
-	void RecvFromServer();	/*受信*/
-	void SendToServer();		/*送信*/
+	int RecvFromServer(char* packet_pt, int packet_size);	/*受信*/
+	void SendToServer(char* src);		/*送信*/
 };
 
 #ifdef FIRSTCODE
@@ -103,4 +108,24 @@ public:
 };
 #endif
 
+
+class sonobuoy_buffer {
+private:
+	char snvi_src[250000] = { 0 };		/*送信用250000byte*/
+	char snvi_recv[250000] = { 0 };	/*Linuxからの返送受け取りバッファ*/
+	int  recvCnt = 0;            //受け取ったバイト数
+	char* snvi_recv_pt = snvi_recv;
+protected:
+
+public:
+	sonobuoy_buffer();
+	~sonobuoy_buffer();
+
+	void FillMemSnvi_src(char fillElem);   			/*送信用バッファに値をセット*/
+	char* GetBufferSnvi_src();								/*送信用バッファ取得*/
+	void SetBufferSnvi_recv(char* recvData);		/*受信用バッファに値をセット*/
+	void SetRecv_Cnt(int recv_cnt);						/*受信したサイズをセット*/
+	void CompareData();										/*送信データと受信データの比較*/
+	char* GetBufferSnvi_recv();
+};
 #endif

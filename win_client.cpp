@@ -9,12 +9,10 @@
 #include<WS2tcpip.h>
 #include<chrono>
 #include<thread>
-#include "win_client.h"
+#include "ImageConverterCheckTest.h"
 
 
- /*サーバー情報マクロ*/
-#define PORT_NUM_SERVER 1238
-#define IP_ADDR_SERVER "169.254.116.138"
+
 
 #define SECONDCODE
 #ifdef SECONDCODE
@@ -57,21 +55,37 @@
 		return 0;
 	}
 
-	void winSocketCl::RecvFromServer() {
-		char buf[1024];
-		memset(buf, 0, sizeof(buf));
-		int rs = recv(sock, buf, sizeof(buf), 0);
-		std::cout << "受信した文字列：" << buf << std::endl << "受信した文字数：" << rs << std::endl;
+	//void winSocketCl::RecvFromServer() {
+	//	//char buf[1024];
+	//	memset(buf, 0, sizeof(buf));
+	//	int rs = recv(sock, buf, sizeof(buf), 0);
+	//	std::cout << "受信した文字列：" << buf << std::endl << "受信した文字数：" << rs << std::endl;
+	//	std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+	//}
+
+	int winSocketCl::RecvFromServer(char* packet_pt, int packet_size) {
+		int rsize;
+			rsize = recv(sock	, packet_pt, packet_size, 0);
+
+			if (rsize < 0) {
+				perror("recv");
+				return 0;
+			}
+			else {
+				//std::cout << "receive : %s" << *buf_pt << std::endl;
+				return rsize;
+			}
+		}
+	
+
+	void winSocketCl::SendToServer(char* src) {
+		//char buf[1024] = { 'e', 'u', 'r', 'a' };
+		std::cout << "send contents ： " << src << "\nsend size : " <<sizeof(src)<< std:: endl;
+		send(sock, src, FRAMESIZE, 0);
 		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-		
 	}
 
-	void winSocketCl::SendToServer() {
-		char buf[1024] = { 'e', 'u', 'r', 'a' };
-		std::cout << "send contents ： " << buf << "\nsend size : " << std:: endl;
-		send(sock, buf, sizeof(buf), 0);
-		std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-	}
+
 
 #endif
 

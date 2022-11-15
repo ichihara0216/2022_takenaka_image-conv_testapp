@@ -142,13 +142,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ImageConverterCheckTest.cpp" />
+    <ClCompile Include="sonobuoy_buffer.cpp" />
     <ClCompile Include="win_client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="テキスト.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="win_client.h" />
+    <ClInclude Include="ImageConverterCheckTest.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
