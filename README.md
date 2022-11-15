@@ -2,91 +2,109 @@
 
 竹中製作所 映像変換装置 検査用アプリ（Windows）
 
-## Getting started
+# 映像変換装置検査用アプリケーション
+Ethernet-HOTLink変換装置の動作確認用の検査治具装置と組合せて使用する検査用アプリケーション。
+検査用治具装置はRGB-HOTLink変換装置も共用だが、RGB-HOTLink変換はHWのみで検証を行うため検査用アプリケーションでの対応は必要ない。
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## 検査用アプリケーション仕様
+### 構成
+* Windows向けのコンソールアプリケーションとして作成する。
+    * アプリケーション名「ImageConverterCheckTest.exe」。
+    * 開発言語は Visual C++を使用する。
+* WindowsのコマンドプロンプトもしくはPowerShellなどから手動で起動。
+* メッセージなどはコンソールに表示、また起動フォルダにログファイルを生成し記録する。
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+### 機能
+#### 検査動作
+1. アプリケーションの起動と初期化処理。
+    * 起動時に設定ファイルを読み込み。
+1. ソノブイ信号の生成と送信。
+    * Ethernet-HOTLink変換装置に接続。
+    通信エラーなどで接続が切れた場合は再接続処理を行い動作を継続する。
+    * 100msごとに以下の処理を実行。
+        1. 擬似ソノブイ信号のデータを生成。
+            * 固定データ（0、-1、32767、-32768）
+            * 乱数（C++ では std::mt19937 を使用する）
+                * seedの初期値を設定値に記述し常に同じ乱数でテスト。
+                * 設定のseed値が0の場合は std::random_device を使用し生成する。
+        1. 生成したソノブイ信号をEthernet-HOTLink変換装置に送信。
+            * 送信したソノブイ信号（を生成したseed値）を記録し、データ受信と比較スレッドに渡す。
+1. 検証用治具からのデータ受信と比較。
+    * 検証用治具からの通信を受信するサーバを起動。
+    通信エラーなどで接続が切れた場合は再受信処理を行い動作を継続する。
+    * 受信データと送信済データの内容を比較し、不一致の場合にエラーメッセージを表示・記録する。
+    * Ethernet-HOTLink変換装置ではエラー発生時にソノブイ信号を破棄したり、前回のデータを複製して送ったりするため受信データにズレが発生する場合がある。
+    ズレが発生したときに延々とエラーにならず、ズレを補正できように処理する。
+1. 終了処理
+    * Quit
+    コマンドの入力でプログラムを終了する。
+    * 送信データの応答が返るまで終了を待つ（送出ブロック数x100ms+αでタイムアウトする）。
 
-## Add your files
+「ソノブイ信号の生成と送信処理」と「検査用治具からのデータ受信と比較」は別スレッドで動作させる。
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+#### 異常検査機能
+検査用アプリで異常状態を発生し、実際の環境で発生するEthernet-HOTLink映像変換装置のエラー対応を確認可能とする。
 
-```
-cd existing_repo
-git remote add origin http://192.168.1.102:36000/software/2022_takenaka_image-conv_testapp.git
-git branch -M main
-git push -uf origin main
-```
+* ソノブイ信号データの変更
+内部で記録するデータと実際に送信するデータを数百回に一度のタイミング（ランダム）に変更し、通信エラーを検出できているかを確認。
+* ソノブイ信号通信間隔の調整
+100ms間隔で送信するソノブイ信号の送信間隔を90～110ms程度の範囲で変更し、長時間のデータの過不足に対する動作を確認。
+* 通信エラーの発生
+以下のエラーを適切なタイミングで発生させることで、通信エラー時の対応を確認する。
+    * 通信データを数バイト少く送る、また多めに送信する。
+    * ソノブイ送信の間隔を150～500ms開ける。
+    * １ブロックのデータを間欠的に間を開けて送信する。
+    * ブロック送信の間や、送信中にTCPのコネクションを切断し再接続する。
+* その他、物理的にLANケーブルを抜くなどの方法でエラーを発生させる。
 
-## Integrate with your tools
+#### メッセージの表示
+以下のメッセージをコンソール画面に表示、またログに記録する。
 
-- [ ] [Set up project integrations](http://gitlab.com/software/2022_takenaka_image-conv_testapp/-/settings/integrations)
+* プログラムの起動、終了
+* Ethernet-HOTLink変換装置への接続、検査用治具からの接続
+* 送信データと受信データの不一致
+* エラーのない場合に一切メッセージが表示されないと正常に動作しているか不明なため、60秒間隔でデータ正常と処理数を表示する。
 
-## Collaborate with your team
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+### 設定
+検査用アプリケーションと同じフォルダに設定ファイルを置き、起動時に設定を読み込む。
+設定を変更した場合には、アプリケーションを再起動し、設定変更を有効にする。
+* 設定項目
+    * Ethernet-HOTLink変換装置のIPアドレスおよび接続ポート番号。
+    * 検査用治具装置からの通信を待ち受けるポート番号。
+    * ソノブイ信号を生成させる乱数のseedの初期値。
+* 装置のIPアドレスなどの設定は、使用するPCの設定による。
 
-## Test and Deploy
 
-Use the built-in continuous integration in GitLab.
+<br><br>
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+## 基本機能
+### 用語
+この資料では以下の意味で用語を使用する。
+* ソノブイ信号
+ソノブイ模擬装置または検査用アプリケーションから映像変換装置に送られるデータ。
+* フレーム（ソノブイ信号）
+ソノブイ信号の CH1～CH8（2byte×8CH）をひとまとまりにしたデータ。
+HOTLink信号はフレーム単位でパケット化して伝送する。
+* ブロック（ソノブイ信号）
+ソノブイ信号15625フレームをひとまとまり（250000byte）にしたデータ。
+ソノブイ模擬装置からのソノブイ信号はブロック単位が10Hzの周期で間欠的に送られる。
 
-***
+### 検査手順
+1. Ethernet-HOTLink変換装置のHOTLink出力と治具のHOTLink入力を接続する。
+1. 検査用PCおよびEthernet-HOTLink変換装置と治具をEthernetで接続する。
+1. PCで検査アプリケーションを立ち上げテストを行う。
 
-# Editing this README
+#### Ethernet-HotLink変換装置
+* Ethernetからソノブイ信号に相当するデータを定期的に受信しHOTLink信号に変換し伝送する。
+* 通信エラーやその他の理由で正しい間隔でソノブイ信号を受信できない場合には、直前に受信したでーたをHOTLLink信号として伝送する。
+* 通信状態、通信エラーなどをLOGに記録し外部から参照可能とする。
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!).  Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+#### 映像変換検査治具
+* HOTLinkからHOTLink信号に変換されたソノブイ信号を受信し、１ブロック単位で検査用アプリケーションに送信する。
+* HOTLink伝送のエラーを検出する場合には、エラー内容を検査用アプリケーションに通知する。
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+### 検査用アプリケーション
+* 擬似のソノブイ信号を生成し、100msごとにEthernet-HOTLink変換装置に送信する。
+* 映像変換検査治具からソノブイ信号を受信し、送信したソノブイ信号と比較する。
+比較した結果が送信データと異なっていた場合にはエラーとして画面に表示およびログに記録する。
