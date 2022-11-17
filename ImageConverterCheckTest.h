@@ -7,6 +7,7 @@
 #include<iostream>
 #include<string>
 #include<winsock2.h	>	//TCP/IP 用の WinSock 2 Protocol-Specific Annex ドキュメントで導入された定義が含まれており、IP アドレスの取得に使用される新しい関数と構造が含まれている
+#include<WS2tcpip.h>
 
 #define FRAMESIZE 250000
 #define PACKETSIZE 1300
@@ -14,11 +15,11 @@
 #define PORT_NUM_SERVER 1237
 #define IP_ADDR_SERVER "169.254.116.138"
 
+using namespace std;
+
 class winSocketCl{
 private:
-	WSADATA wsaData;
 	SOCKET sock;
-	int wsaErr;		//wsa初期化時のエラー変数
 	int connectErr;	//コネクト時のエラー変数
 	struct sockaddr_in ser_addr;
 
@@ -31,7 +32,7 @@ public:
 
 	void SetServer();			/*サーバー情報の設定*/	
 	int MakeSocket();		/*ソケット作成*/
-	int ConnToServer();	/*コネクト*/
+	void ConnToServer();	/*コネクト*/
 	int RecvFromServer(char* packet_pt, int packet_size);	/*受信*/
 	void SendToServer(char* src);		/*送信*/
 };
@@ -121,7 +122,7 @@ public:
 	sonobuoy_buffer();
 	~sonobuoy_buffer();
 
-	void FillMemSnvi_src(char fillElem);   			/*送信用バッファに値をセット*/
+	void FillMemSnvi_src();   			/*送信用バッファに値をセット*/
 	char* GetBufferSnvi_src();								/*送信用バッファ取得*/
 	void SetBufferSnvi_recv(char* recvData);		/*受信用バッファに値をセット*/
 	void SetRecv_Cnt(int recv_cnt);						/*受信したサイズをセット*/
