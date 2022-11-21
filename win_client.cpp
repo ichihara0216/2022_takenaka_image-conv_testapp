@@ -3,7 +3,10 @@
  * インクルードファイル
  ***********************************************************************/
 
+#include<iostream>
+#include<winsock2.h	>	//TCP/IP 用の WinSock 2 Protocol-Specific Annex ドキュメントで導入された定義が含まれており、IP アドレスの取得に使用される新しい関数と構造が含まれている
 #include<stdio.h>
+#include<WS2tcpip.h>
 #include<chrono>
 #include<thread>
 #include "ImageConverterCheckTest.h"
@@ -16,7 +19,9 @@
 
 
 	winSocketCl::winSocketCl() {
+		wsaData = { 0 };
 		sock = 0;
+		wsaErr = WSAStartup(MAKEWORD(2, 0), &wsaData);
 		connectErr = 0;
 		ser_addr = { 0 };
 	}
@@ -30,7 +35,6 @@
 		ser_addr.sin_family = AF_INET;
 		ser_addr.sin_port = htons(PORT_NUM_SERVER);
 		inet_pton(AF_INET, IP_ADDR_SERVER, &ser_addr.sin_addr.S_un.S_addr);
-		std::cout << "setserver:ok" << std::endl;
 	}
 
 	int winSocketCl::MakeSocket() {
@@ -39,16 +43,16 @@
 			perror("socket");
 			return 1;
 		}
-		std::cout << "makeserver:ok" << std::endl;
 		return 0;
 	}
 
-	void winSocketCl::ConnToServer() {
+	int winSocketCl::ConnToServer() {
 		if ((connectErr = connect(sock, (struct sockaddr*)&ser_addr, sizeof(ser_addr))) < 0) {
 			std::cout << "コネクト失敗エラー" << std::endl;
 			perror("connect");
+			return 1;
 		}
-		std::cout << "connect:ok" << std::endl;
+		return 0;
 	}
 
 	//void winSocketCl::RecvFromServer() {

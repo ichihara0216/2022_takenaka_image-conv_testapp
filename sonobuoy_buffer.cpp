@@ -5,25 +5,8 @@
 sonobuoy_buffer::sonobuoy_buffer(){}
 sonobuoy_buffer::~sonobuoy_buffer() {}
 
-
-
-
 /*メモリを引数の文字で埋める*/
-void sonobuoy_buffer::FillMemSnvi_src() {
-	char writePattern;
-	int getKeyFlag = 0;
-
-	do {
-		std::cout << "連続してメモリに書き込むパターンを選択" << std::endl;
-		std::cout << "ーーーーーーーーーーーーーーーーーーーーーーー" << std::endl;
-		std::cout << "1：書き込む文字(1byte)を指定して書き込み" << std::endl;
-		std::cout << "２：乱数の書き込み" << std::endl;
-		std::cout << "ーーーーーーーーーーーーーーーーーーーーーーー" << std::endl;
-		std::cout << "（１ or ２）：";
-		writePattern = cin.get();
-	}while(getKeyFlag)
-	
-
+void sonobuoy_buffer::FillMemSnvi_src(char fillElem) {
 	for (int i = 0; i < FRAMESIZE; i++) {
 		snvi_src[i] = fillElem;
 		}
